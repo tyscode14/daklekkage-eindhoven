@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stormschade-check: wind en regen op uw schadedatum (KNMI)</title>
+<meta name="description" content="Daklekkage of dakschade? Check met officiële KNMI-metingen of het op uw schadedatum stormde (≥ 14 m/s) of extreem regende, voor het station bij uw postcode. Gratis, open source.">
+<link rel="canonical" href="https://tyscode14.github.io/daklekkage-eindhoven/">
+<meta name="theme-color" content="#0B1F2C">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/fraunces.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/manrope.woff2" as="font" type="font/woff2" crossorigin>
+<meta property="og:type" content="website">
+<meta property="og:locale" content="nl_NL">
+<meta property="og:title" content="Stormschade-check: wind en regen op uw schadedatum">
+<meta property="og:description" content="Officiële KNMI-metingen voor uw postcode en datum: was het storm (≥ 14 m/s) of extreme regen?">
+<meta property="og:url" content="https://tyscode14.github.io/daklekkage-eindhoven/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebApplication",
+      "name": "Stormschade-check",
+      "url": "https://tyscode14.github.io/daklekkage-eindhoven/",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Any",
+      "inLanguage": "nl-NL",
+      "isAccessibleForFree": true,
+      "offers": {"@type": "Offer", "price": "0", "priceCurrency": "EUR"},
+      "description": "Zoekt voor een postcode en datum de dichtstbijzijnde KNMI-meetstations op en toont hoogste uurgemiddelde wind, windstoten en neerslag, vergeleken met de stormgrens van 14 m/s.",
+      "author": {"@type": "Organization", "name": "Daklekkage Eindhoven", "url": "https://daklekkageeindhoven.com/"},
+      "isBasedOn": {"@type": "Dataset", "name": "KNMI daggegevens van het weer in Nederland", "url": "https://www.knmi.nl/nederland-nu/klimatologie/daggegevens", "license": "https://creativecommons.org/licenses/by/4.0/", "creator": {"@type": "GovernmentOrganization", "name": "Koninklijk Nederlands Meteorologisch Instituut"}}
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {"@type": "Question", "name": "Vanaf welke windsnelheid is het storm voor de verzekering?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Veel verzekeraars, waaronder Interpolis, spreken van storm bij windkracht 7 of meer: een windsnelheid van 14 meter per seconde of meer, gemeten door het KNMI. Het gaat om de gemiddelde windsnelheid over een uur, niet om een losse windstoot. Controleer altijd uw eigen polisvoorwaarden."}},
+        {"@type": "Question", "name": "Welke KNMI-meting gebruikt deze tool?",
+         "acceptedAnswer": {"@type": "Answer", "text": "De daggegevens van de automatische KNMI-weerstations: het hoogste uurgemiddelde van de windsnelheid (FHX), de hoogste windstoot (FXX), de neerslagsom (RH) en het hoogste uursom neerslag (RHX), plus het uur waarin die gemeten zijn."}},
+        {"@type": "Question", "name": "Hoe nauwkeurig is de meting voor mijn adres?",
+         "acceptedAnswer": {"@type": "Answer", "text": "Het KNMI meet op een beperkt aantal stations. De tool kiest het dichtstbijzijnde station en toont de afstand. Lokaal kunnen buien en windstoten zwaarder of lichter zijn dan op het station."}}
+      ]
+    }
+  ]
+}
+</script>
+<style>
+@font-face{font-family:"Fraunces";src:url("fonts/fraunces.woff2") format("woff2");font-weight:500 700;font-display:swap}
+@font-face{font-family:"Manrope";src:url("fonts/manrope.woff2") format("woff2");font-weight:400 800;font-display:swap}
+:root{
+  --paper:#F7F4EE;--paper-2:#EFEAE0;--surface:#fff;--ink:#0F1E28;--ink-2:#34454F;--muted:#6A7880;--line:rgba(15,30,40,.10);--line-2:rgba(15,30,40,.18);
+  --night:#0B1F2C;--night-2:#10293A;--on-night:#EEF3F6;--on-night-2:#A7B8C3;--on-night-line:rgba(238,243,246,.12);
+  --copper:#E39A3B;--copper-2:#C97F22;--copper-ink:#8F5410;--copper-soft:#FBF0E1;--sky:#8CC8EC;--sky-ink:#1F6E9E;--sky-soft:#E6F3FB;
+  --ok:#2E7D52;--ok-soft:#E4F2EA;--err:#B3261E;--err-soft:#FBE9E7;
+  --radius:18px;--shadow:0 1px 2px rgba(15,30,40,.05),0 8px 28px rgba(15,30,40,.07);
+  --serif:"Fraunces",Georgia,serif;--sans:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color-scheme:light
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#08141C;--paper-2:#0C1B25;--surface:#0F2230;--ink:#E9EFF3;--ink-2:#C3CFD7;--muted:#8FA1AC;--line:rgba(233,239,243,.10);--line-2:rgba(233,239,243,.18);
+  --night:#050E14;--copper-ink:#F1B466;--copper-soft:#2A1E10;--sky-ink:#8CC8EC;--sky-soft:#0E2B3C;--ok-soft:#10301F;--err-soft:#3A1512;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#08141C;--paper-2:#0C1B25;--surface:#0F2230;--ink:#E9EFF3;--ink-2:#C3CFD7;--muted:#8FA1AC;--line:rgba(233,239,243,.10);--line-2:rgba(233,239,243,.18);
+  --night:#050E14;--copper-ink:#F1B466;--copper-soft:#2A1E10;--sky-ink:#8CC8EC;--sky-soft:#0E2B3C;--ok-soft:#10301F;--err-soft:#3A1512;--shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.35);color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16.5px;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-wrap:break-word}
+a{color:var(--copper-ink);text-underline-offset:.18em}
+.wrap{width:min(1100px,calc(100% - 2.5rem));margin-inline:auto}
+@media (max-width:560px){.wrap{width:calc(100% - 2rem)}}
+h1,h2{font-family:var(--serif);font-weight:600;letter-spacing:-.012em;line-height:1.08;margin:0}
+h2{font-size:clamp(1.6rem,3.2vw,2.2rem);margin-bottom:.8rem}
+h3{font-size:1rem;margin:0 0 .4rem;letter-spacing:-.01em}
+p{margin:0 0 1rem;max-width:70ch}
+.top{background:var(--night);color:var(--on-night)}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:1rem;height:3.9rem;border-bottom:1px solid var(--on-night-line)}
+.brand{display:inline-flex;align-items:center;gap:.6rem;color:inherit;text-decoration:none;font-weight:700}
+.brand img{width:32px;height:32px;border-radius:9px}
+.brand b{font-family:var(--serif);font-weight:600;font-size:1.05rem}
+.bar nav a{color:var(--on-night-2);text-decoration:none;font-size:.88rem;font-weight:600;margin-left:1.2rem}
+.bar nav a:hover{color:var(--on-night)}
+@media (max-width:640px){.bar nav a.hide-s{display:none}}
+.hero{position:relative;background:radial-gradient(900px 420px at 90% -10%,rgba(140,200,236,.18),transparent 60%),radial-gradient(700px 380px at -10% 110%,rgba(227,154,59,.14),transparent 60%),var(--night);color:var(--on-night);padding:3rem 0 5.5rem;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;opacity:.5;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='120' viewBox='0 0 220 120'%3E%3Cpath d='M0 90 55 45l55 45 55-45 55 45' fill='none' stroke='%23ffffff' stroke-opacity='.05' stroke-width='1.2'/%3E%3C/svg%3E");background-size:220px 120px;mask-image:linear-gradient(to bottom,#000 10%,transparent 90%);pointer-events:none}
+.kicker{display:inline-flex;align-items:center;gap:.55rem;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;font-weight:800;color:var(--copper)}
+.kicker::before{content:"";width:1.6rem;height:1px;background:currentColor}
+.hero h1{font-size:clamp(2.3rem,5.6vw,4rem);margin:.9rem 0 1rem;max-width:18ch;position:relative}
+.hero h1 em{font-style:italic;font-weight:500;color:var(--sky)}
+.hero p{color:var(--on-night-2);font-size:1.07rem;max-width:60ch;position:relative}
+.panel{position:relative;margin-top:-3.6rem;background:var(--surface);border-radius:22px;box-shadow:0 30px 70px -30px rgba(11,31,44,.55),0 0 0 1px var(--line);padding:1.5rem}
+.form{display:grid;grid-template-columns:1.2fr .9fr auto;gap:.9rem;align-items:end}
+@media (max-width:760px){.form{grid-template-columns:1fr}}
+.form>*{min-width:0}
+label{display:block;font-size:.76rem;font-weight:800;letter-spacing:.02em;margin:0 0 .35rem;color:var(--ink-2)}
+input,select{width:100%;font:inherit;font-size:1rem;padding:.8rem .9rem;border:1px solid var(--line-2);border-radius:12px;background:var(--paper);color:var(--ink)}
+input:focus,select:focus{outline:none;border-color:var(--copper-2);box-shadow:0 0 0 4px rgba(227,154,59,.22);background:var(--surface)}
+button{font:inherit;cursor:pointer}
+.go{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-weight:800;font-size:1rem;padding:.85rem 1.4rem;border:0;border-radius:12px;background:linear-gradient(180deg,#EDA64A,var(--copper-2));color:#1B1004;box-shadow:0 10px 24px -10px rgba(201,127,34,.8);white-space:nowrap}
+.go svg{width:18px;height:18px}
+.hint{margin:.8rem 0 0;font-size:.8rem;color:var(--muted)}
+.quick{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem}
+.quick button{border:1px solid var(--line-2);background:var(--paper);color:var(--ink-2);border-radius:999px;padding:.3rem .75rem;font-size:.78rem;font-weight:700}
+.quick button:hover{border-color:var(--copper-2);color:var(--copper-ink)}
+.status{margin:1rem 0 0;font-weight:700;font-size:.92rem}
+.status.err{color:var(--err)}
+main{padding:2.2rem 0 4rem}
+#result[hidden]{display:none}
+.verdict{border-radius:var(--radius);padding:1.4rem 1.5rem;display:grid;grid-template-columns:auto 1fr;gap:1rem 1.2rem;align-items:start;margin-bottom:1.4rem;border:1px solid var(--line)}
+.verdict .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;font-size:1.5rem;font-weight:800}
+.verdict h2{font-size:clamp(1.35rem,2.8vw,1.8rem);margin:0 0 .35rem}
+.verdict p{margin:0;color:var(--ink-2)}
+.v-storm{background:var(--err-soft)}.v-storm .ic{background:var(--err);color:#fff}
+.v-rain{background:var(--sky-soft)}.v-rain .ic{background:var(--sky-ink);color:#fff}
+.v-calm{background:var(--ok-soft)}.v-calm .ic{background:var(--ok);color:#fff}
+.v-edge{background:var(--copper-soft)}.v-edge .ic{background:var(--copper-2);color:#1B1004}
+.meta{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:.84rem;color:var(--muted);margin:0 0 1.2rem}
+.meta b{color:var(--ink)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.4rem}
+@media (max-width:860px){.cards{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:1.3rem 1.4rem;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.card .lbl{font-size:.7rem;letter-spacing:.16em;text-transform:uppercase;font-weight:800;color:var(--muted)}
+.card .val{font-family:var(--serif);font-size:2.6rem;font-weight:600;line-height:1;margin:.5rem 0 .3rem;letter-spacing:-.02em}
+.card .val small{font-size:.42em;color:var(--muted);margin-left:.2em;font-family:var(--sans);font-weight:700;letter-spacing:0}
+.card .sub{font-size:.88rem;color:var(--ink-2)}
+.meter{height:8px;border-radius:999px;background:var(--paper-2);margin:1rem 0 .4rem;position:relative;overflow:visible}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,var(--sky),var(--copper))}
+.meter b{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--err)}
+.meter-l{display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted)}
+.pill{display:inline-block;font-size:.72rem;font-weight:800;padding:.2rem .55rem;border-radius:999px;margin-top:.5rem}
+.pill.r{background:var(--err-soft);color:var(--err)}.pill.o{background:var(--copper-soft);color:var(--copper-ink)}.pill.g{background:var(--ok-soft);color:var(--ok)}.pill.b{background:var(--sky-soft);color:var(--sky-ink)}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:1.4rem;overflow:hidden}
+.box-h{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.6rem;padding:1rem 1.2rem;border-bottom:1px solid var(--line)}
+.box-h h3{margin:0}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;min-width:640px}
+th,td{padding:.7rem 1rem;text-align:right;font-size:.9rem;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums;white-space:nowrap}
+th{font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);background:var(--paper)}
+th:first-child,td:first-child{text-align:left}
+tr.sel td{background:var(--copper-soft);font-weight:800}
+tr:last-child td{border-bottom:0}
+td.hot{color:var(--err);font-weight:800}
+.stn{display:grid;grid-template-columns:1fr auto;gap:.8rem;align-items:end;padding:1rem 1.2rem}
+.stn select{max-width:100%}
+.btns{display:flex;flex-wrap:wrap;gap:.5rem}
+.ghost{border:1px solid var(--line-2);background:var(--surface);color:var(--ink);border-radius:10px;padding:.55rem .9rem;font-weight:700;font-size:.86rem}
+.ghost:hover{border-color:var(--copper-2);color:var(--copper-ink)}
+.top-days{display:grid;grid-template-columns:1fr 1fr;gap:0}
+@media (max-width:760px){.top-days{grid-template-columns:1fr}}
+.top-days>div{padding:1rem 1.2rem}
+.top-days>div+div{border-left:1px solid var(--line)}
+@media (max-width:760px){.top-days>div+div{border-left:0;border-top:1px solid var(--line)}}
+.top-days ol{margin:0;padding-left:1.2rem;font-size:.9rem}
+.top-days li{margin:.3rem 0}
+.top-days button{border:0;background:none;color:var(--copper-ink);text-decoration:underline;text-underline-offset:.18em;padding:0;font-weight:700}
+.note{font-size:.84rem;color:var(--muted);line-height:1.6}
+section.info{padding:3rem 0;border-top:1px solid var(--line)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem}
+@media (max-width:860px){.grid2{grid-template-columns:1fr;gap:1rem}}
+.bft{border-collapse:collapse;min-width:0;width:100%;font-size:.86rem}
+.bft td,.bft th{padding:.45rem .7rem}
+.bft tr.b7 td{background:var(--err-soft);font-weight:800}
+details{border-bottom:1px solid var(--line-2)}
+summary{cursor:pointer;padding:1rem 0;font-weight:750}
+details p{margin:0 0 1rem;color:var(--ink-2)}
+.cta{background:var(--night);color:var(--on-night);border-radius:22px;padding:1.8rem 2rem;display:flex;flex-wrap:wrap;gap:1rem;justify-content:space-between;align-items:center;margin-top:1rem}
+.cta h2{margin:0 0 .3rem;font-size:1.7rem}
+.cta p{margin:0;color:var(--on-night-2)}
+.cta a.go{text-decoration:none}
+footer{background:var(--night);color:var(--on-night-2);padding:2rem 0;font-size:.84rem}
+footer a{color:var(--on-night)}
+.print-only{display:none}
+@media print{
+  .top,.hero,.panel,.no-print,section.info,footer,.cta{display:none!important}
+  body{background:#fff;color:#000;font-size:11pt}
+  main{padding:0}
+  .print-only{display:block}
+  .card,.box,.verdict{box-shadow:none;border:1px solid #bbb;break-inside:avoid}
+  .verdict{background:#fff!important}
+  .cards{grid-template-columns:repeat(3,1fr)}
+  a{color:#000}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="m20 20-4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+</svg>
+
+<header class="top">
+  <div class="wrap bar">
+    <a class="brand" href="https://daklekkageeindhoven.com/"><img src="icon.svg" alt="" width="32" height="32"><b>Daklekkage Eindhoven</b></a>
+    <nav><a class="hide-s" href="#uitleg">Uitleg</a><a class="hide-s" href="#vragen">Vragen</a><a href="https://github.com/tyscode14/daklekkage-eindhoven">GitHub</a></nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="kicker">Open tool · KNMI-metingen</span>
+    <h1>Stormschade-check: was het <em>storm</em> op uw schadedatum?</h1>
+    <p>Voer uw postcode en de datum van de dakschade of daklekkage in. U ziet direct wat het dichtstbijzijnde KNMI-station die dag mat: het hoogste uurgemiddelde van de wind, de zwaarste windstoot en de regen. Vergeleken met de stormgrens van <strong style="color:var(--on-night)">14 m/s (windkracht 7)</strong> die veel verzekeraars hanteren.</p>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="panel no-print">
+    <form class="form" id="f" autocomplete="off">
+      <div><label for="loc">Postcode of plaats</label><input id="loc" name="loc" placeholder="Bijv. 5611 AB of Nuenen" required></div>
+      <div><label for="date">Datum van de schade</label><input id="date" name="date" type="date" min="2000-01-01" required></div>
+      <button class="go" type="submit"><svg aria-hidden="true"><use href="#i-search"/></svg>Check datum</button>
+    </form>
+    <div class="quick" aria-label="Voorbeelden">
+      <button type="button" data-loc="5611AB" data-date="2022-02-18">Storm Eunice · Eindhoven</button>
+      <button type="button" data-loc="5611AB" data-date="2023-11-02">Storm Ciarán · Eindhoven</button>
+      <button type="button" data-loc="5611AB" data-date="2022-06-05">Wolkbreuk · Eindhoven</button>
+      <button type="button" data-loc="Amsterdam" data-date="2022-02-18">Storm Eunice · Amsterdam</button>
+    </div>
+    <p class="hint">Postcode-opzoeking via PDOK Locatieserver. Metingen: KNMI daggegevens (CC BY 4.0), dagelijks bijgewerkt vanaf 2000.</p>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </div>
+</div>
+
+<main class="wrap">
+  <div class="print-only">
+    <h1 style="font-size:20pt;margin:0 0 4pt">Weermetingen op schadedatum</h1>
+    <p style="margin:0 0 10pt">Samenvatting van officiële KNMI-metingen, gegenereerd met de Stormschade-check (tyscode14.github.io/daklekkage-eindhoven) op <span id="pdate"></span>.</p>
+  </div>
+
+  <div id="result" hidden>
+    <div class="verdict" id="verdict"><div class="ic" id="vic"></div><div><h2 id="vtitle"></h2><p id="vtext"></p></div></div>
+    <div class="meta" id="meta"></div>
+    <div class="cards">
+      <div class="card">
+        <div class="lbl">Hoogste uurgemiddelde wind</div>
+        <div class="val" id="fhx"></div>
+        <div class="sub" id="fhx-sub"></div>
+        <div class="meter" aria-hidden="true"><i id="fhx-bar"></i><b style="left:46.7%"></b></div>
+        <div class="meter-l"><span>0</span><span>stormgrens 14 m/s</span><span>30 m/s</span></div>
+        <span class="pill" id="fhx-pill"></span>
+      </div>
+      <div class="card">
+        <div class="lbl">Zwaarste windstoot</div>
+        <div class="val" id="fxx"></div>
+        <div class="sub" id="fxx-sub"></div>
+        <span class="pill" id="fxx-pill"></span>
+      </div>
+      <div class="card">
+        <div class="lbl">Neerslag die dag</div>
+        <div class="val" id="rh"></div>
+        <div class="sub" id="rh-sub"></div>
+        <span class="pill" id="rh-pill"></span>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="box-h"><h3>Drie dagen ervoor en erna</h3><span class="note">Schade wordt vaak later ontdekt. Rood = boven de stormgrens.</span></div>
+      <div class="tw"><table>
+        <thead><tr><th>Datum</th><th>Uurgemiddelde</th><th>Windkracht</th><th>Windstoot</th><th>Richting</th><th>Regen</th><th>Zwaarste uur</th></tr></thead>
+        <tbody id="week"></tbody>
+      </table></div>
+    </div>
+
+    <div class="box no-print">
+      <div class="stn">
+        <div><label for="stn">Meetstation</label><select id="stn"></select></div>
+        <div class="btns"><button class="ghost" type="button" id="copy">Link kopiëren</button><button class="ghost" type="button" id="print">Afdrukken / PDF</button></div>
+      </div>
+      <p class="note" style="padding:0 1.2rem 1rem;margin:0">Standaard gebruikt de tool het dichtstbijzijnde station met wind- én regenmetingen. Kuststations op zee of pieren meten vaak meer wind dan landinwaarts; kies die alleen bewust.</p>
+    </div>
+
+    <div class="box">
+      <div class="box-h"><h3 id="top-title">Zwaarste dagen bij dit station sinds 2000</h3></div>
+      <div class="top-days"><div><h3>Wind (uurgemiddelde)</h3><ol id="topw"></ol></div><div><h3>Regen (dagsom)</h3><ol id="topr"></ol></div></div>
+    </div>
+
+    <p class="note">Bron: KNMI daggegevens, station <span id="src-stn"></span> (CC BY 4.0). Tijden in Nederlandse tijd, afgeleid uit het KNMI-uurvak (UT). Recente dagen zijn voorlopig: het KNMI controleert de gegevens op werkdagen. Deze samenvatting is geen oordeel over uw claim: de voorwaarden van uw verzekeraar zijn leidend.</p>
+
+    <div class="cta no-print">
+      <div><h2>Lekt uw dak na deze storm of bui?</h2><p>Lees wat u nu doet, wat herstel kost en wanneer de verzekering betaalt.</p></div>
+      <a class="go" href="https://daklekkageeindhoven.com/">Naar daklekkageeindhoven.com</a>
+    </div>
+  </div>
+</main>
+
+<section class="info" id="uitleg">
+  <div class="wrap grid2">
+    <div>
+      <h2>Hoe leest u de uitkomst?</h2>
+      <p><strong>Uurgemiddelde wind (FHX)</strong> is de hoogste gemiddelde windsnelheid over een heel uur. Daar kijken verzekeraars naar: Interpolis spreekt van storm bij <strong>windkracht 7 of meer, een windsnelheid van 14 m/s of meer, gemeten door het KNMI</strong>.</p>
+      <p><strong>Windstoot (FXX)</strong> is de hoogste momentane windsnelheid. Die ligt vaak twee keer zo hoog en veroorzaakt de schade, maar telt meestal niet als stormdefinitie.</p>
+      <p><strong>Neerslag (RH en RHX)</strong> is de totale regen op die dag en de zwaarste uursom. Voor schade door neerslag gelden per polis eigen voorwaarden; de tool laat zien hoe uitzonderlijk de bui was ten opzichte van 1991–2020 op hetzelfde station.</p>
+      <p class="note">Bron stormgrens: <a href="https://www.interpolis.nl/schade/veelvoorkomende-schades/stormschade" rel="nofollow noopener">Interpolis, stormschade</a>. Controleer altijd de voorwaarden van uw eigen verzekeraar.</p>
+    </div>
+    <div>
+      <h2>Windkracht in m/s</h2>
+      <table class="bft">
+        <thead><tr><th>Windkracht</th><th>Omschrijving</th><th>m/s (uurgemiddelde)</th></tr></thead>
+        <tbody>
+          <tr><td>5</td><td>Vrij krachtig</td><td>8,0 – 10,7</td></tr>
+          <tr><td>6</td><td>Krachtig</td><td>10,8 – 13,8</td></tr>
+          <tr class="b7"><td>7</td><td>Hard (storm voor verzekeraars vanaf 14 m/s)</td><td>13,9 – 17,1</td></tr>
+          <tr><td>8</td><td>Stormachtig</td><td>17,2 – 20,7</td></tr>
+          <tr><td>9</td><td>Storm</td><td>20,8 – 24,4</td></tr>
+          <tr><td>10</td><td>Zware storm</td><td>24,5 – 28,4</td></tr>
+          <tr><td>11</td><td>Zeer zware storm</td><td>28,5 – 32,6</td></tr>
+          <tr><td>12</td><td>Orkaan</td><td>≥ 32,7</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="info" id="vragen">
+  <div class="wrap" style="max-width:860px">
+    <h2>Veelgestelde vragen</h2>
+    <details><summary>Vanaf welke windsnelheid is het storm voor de verzekering?</summary><p>Veel verzekeraars, waaronder Interpolis, spreken van storm bij windkracht 7 of meer: een windsnelheid van 14 meter per seconde of meer, gemeten door het KNMI. Het gaat om de gemiddelde windsnelheid over een uur, niet om een losse windstoot. Controleer altijd uw eigen polisvoorwaarden.</p></details>
+    <details><summary>Welke KNMI-meting gebruikt deze tool?</summary><p>De daggegevens van de automatische KNMI-weerstations: het hoogste uurgemiddelde van de windsnelheid (FHX), de hoogste windstoot (FXX), de neerslagsom (RH) en de hoogste uursom neerslag (RHX), plus het uur waarin die gemeten zijn. De data worden elke nacht opnieuw opgehaald.</p></details>
+    <details><summary>Hoe nauwkeurig is de meting voor mijn adres?</summary><p>Het KNMI meet op een beperkt aantal stations. De tool kiest het dichtstbijzijnde station en toont de afstand. Lokaal kunnen buien en windstoten zwaarder of lichter zijn dan op het station; bij twijfel kunt u een ander station kiezen.</p></details>
+    <details><summary>Mijn schade is van vandaag of gisteren. Waarom zie ik nog niets?</summary><p>Het KNMI publiceert de daggegevens met een dag vertraging en controleert ze op werkdagen. Probeer het een dag later opnieuw.</p></details>
+    <details><summary>Kan ik de uitkomst meesturen naar mijn verzekeraar?</summary><p>Ja. Met <em>Afdrukken / PDF</em> maakt u een samenvatting met de metingen, het station en de bron. Uw verzekeraar beoordeelt de schade zelf aan de hand van de polisvoorwaarden.</p></details>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Stormschade-check is open source (MIT) en gemaakt door <a href="https://daklekkageeindhoven.com/">daklekkageeindhoven.com</a>. Weergegevens: <a href="https://www.knmi.nl/nederland-nu/klimatologie/daggegevens" rel="noopener">KNMI</a>, licentie CC BY 4.0. Locatie: <a href="https://www.pdok.nl/" rel="noopener">PDOK Locatieserver</a>. Geen cookies, geen tracking.</p>
+    <p><a href="https://github.com/tyscode14/daklekkage-eindhoven">Broncode en data op GitHub</a></p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+  var STORM = 140;               // 14.0 m/s in KNMI units (0.1 m/s)
+  var BFT = [3, 16, 34, 55, 80, 108, 139, 172, 208, 245, 285, 327]; // upper bounds in 0.1 m/s for Bft 0..11
+  var BFT_NAME = ['Windstil', 'Zwak', 'Zwak', 'Matig', 'Matig', 'Vrij krachtig', 'Krachtig', 'Hard', 'Stormachtig', 'Storm', 'Zware storm', 'Zeer zware storm', 'Orkaan'];
+  var COMPASS = ['N', 'NNO', 'NO', 'ONO', 'O', 'OZO', 'ZO', 'ZZO', 'Z', 'ZZW', 'ZW', 'WZW', 'W', 'WNW', 'NW', 'NNW'];
+  var $ = function (id) { return document.getElementById(id); };
+  var nf1 = new Intl.NumberFormat('nl-NL', {minimumFractionDigits: 1, maximumFractionDigits: 1});
+  var nf0 = new Intl.NumberFormat('nl-NL', {maximumFractionDigits: 0});
+  var META = null, CACHE = {}, STATE = {};
+
+  function status(msg, err) { $('status').textContent = msg || ''; $('status').className = 'status' + (err ? ' err' : ''); }
+  function bft(v) { for (var i = 0; i < BFT.length; i++) if (v <= BFT[i]) return i; return 12; }
+  function ms(v) { return nf1.format(v / 10); }
+  function kmh(v) { return nf0.format(v / 10 * 3.6); }
+  function mm(v) { return v === -1 ? '< 0,1' : nf1.format(v / 10); }
+  function dist(a, b, c, d) {
+    var R = 6371, r = Math.PI / 180, x = (c - a) * r, y = (d - b) * r;
+    var h = Math.sin(x / 2) * Math.sin(x / 2) + Math.cos(a * r) * Math.cos(c * r) * Math.sin(y / 2) * Math.sin(y / 2);
+    return 2 * R * Math.asin(Math.sqrt(h));
+  }
+  function iso(dt) { return dt.toISOString().slice(0, 10); }
+  function key(dt) { return iso(dt).replace(/-/g, ''); }
+  function nlDate(s) { var d = new Date(s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8) + 'T12:00:00Z'); return d.toLocaleDateString('nl-NL', {weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC'}); }
+  function slot(ymd, h) {
+    if (!h) return '';
+    var t0 = new Date(Date.UTC(+ymd.slice(0, 4), +ymd.slice(4, 6) - 1, +ymd.slice(6, 8), h - 1));
+    var t1 = new Date(t0.getTime() + 3600000);
+    var f = {hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Amsterdam'};
+    return t0.toLocaleTimeString('nl-NL', f) + '–' + t1.toLocaleTimeString('nl-NL', f);
+  }
+  function compass(deg) { return deg ? COMPASS[Math.round(deg / 22.5) % 16] : '–'; }
+
+  function loadMeta() {
+    if (META) return Promise.resolve(META);
+    return fetch('data/stations.json').then(function (r) { return r.json(); }).then(function (m) { META = m; return m; });
+  }
+  function loadYear(stn, y) {
+    var k = stn + '/' + y;
+    if (!CACHE[k]) CACHE[k] = fetch('data/' + k + '.json').then(function (r) { return r.ok ? r.json() : {days: {}}; }).catch(function () { return {days: {}}; });
+    return CACHE[k];
+  }
+  function geocode(q) {
+    var clean = q.trim();
+    var pc = clean.replace(/\s+/g, '').toUpperCase();
+    var isPc = /^[1-9][0-9]{3}[A-Z]{2}$/.test(pc);
+    var url = 'https://api.pdok.nl/bzk/locatieserver/search/v3_1/free?rows=1&fl=centroide_ll,weergavenaam&q=' +
+      encodeURIComponent(isPc ? pc : clean) + (isPc ? '&fq=type:postcode' : '&fq=type:(woonplaats OR postcode OR gemeente)');
+    return fetch(url).then(function (r) { return r.json(); }).then(function (j) {
+      var d = j.response && j.response.docs && j.response.docs[0];
+      if (!d) throw new Error('notfound');
+      var m = d.centroide_ll.match(/POINT\(([\d.]+) ([\d.]+)\)/);
+      return {lon: +m[1], lat: +m[2], name: d.weergavenaam};
+    });
+  }
+  function covers(s, ymd, kind) {
+    var last = kind === 'rain' ? s.last_rain : s.last_wind;
+    return last && s.first <= ymd && ymd <= last;
+  }
+  function rankStations(loc, ymd) {
+    return META.stations.map(function (s) {
+      return {s: s, km: dist(loc.lat, loc.lon, s.lat, s.lon), full: covers(s, ymd, 'wind') && covers(s, ymd, 'rain')};
+    }).sort(function (a, b) { return a.km - b.km; });
+  }
+
+  function run(loc, dateStr, stnId) {
+    status('Metingen ophalen…');
+    var ymd = dateStr.replace(/-/g, '');
+    return loadMeta().then(function () {
+      var ranked = rankStations(loc, ymd);
+      var pick = stnId ? ranked.filter(function (r) { return r.s.id === +stnId; })[0] : ranked.filter(function (r) { return r.full; })[0];
+      if (!pick) { status('Voor deze datum is geen KNMI-meting beschikbaar (vanaf 1 januari 2000 tot en met gisteren).', true); return; }
+      var sel = $('stn');
+      sel.innerHTML = ranked.filter(function (r) { return covers(r.s, ymd, 'wind') || covers(r.s, ymd, 'rain'); }).slice(0, 12).map(function (r) {
+        return '<option value="' + r.s.id + '"' + (r.s.id === pick.s.id ? ' selected' : '') + '>' + r.s.name + ' (' + nf0.format(r.km) + ' km' + (r.full ? '' : ', beperkte metingen') + ')</option>';
+      }).join('');
+      var d0 = new Date(dateStr + 'T00:00:00Z');
+      var days = [];
+      for (var i = -3; i <= 3; i++) days.push(new Date(d0.getTime() + i * 864e5));
+      var years = days.map(function (d) { return d.getUTCFullYear(); }).filter(function (v, i, a) { return a.indexOf(v) === i; });
+      return Promise.all(years.map(function (y) { return loadYear(pick.s.id, y); })).then(function (files) {
+        var byYear = {};
+        years.forEach(function (y, i) { byYear[y] = files[i]; });
+        var get = function (d) {
+          var f = byYear[d.getUTCFullYear()];
+          var row = f && f.days && f.days[key(d).slice(4)];
+          if (!row) return null;
+          var o = {};
+          (f.fields || []).forEach(function (n, i) { o[n] = row[i]; });
+          return o;
+        };
+        var today = get(d0);
+        if (!today) { status('Station ' + pick.s.name + ' heeft voor ' + dateStr + ' (nog) geen meting. Probeer een ander station of een eerdere datum.', true); return; }
+        STATE = {loc: loc, date: dateStr, stn: pick.s.id};
+        render(loc, pick, ymd, today, days.map(function (d) { return {d: d, v: get(d)}; }));
+        status('');
+        history.replaceState(null, '', '?locatie=' + encodeURIComponent(loc.query) + '&datum=' + dateStr + (stnId ? '&station=' + stnId : ''));
+      });
+    });
+  }
+
+  function render(loc, pick, ymd, v, week) {
+    var s = pick.s, p99 = s.p99 || {}, p999 = s.p999 || {};
+    var fhx = v.FHX, fxx = v.FXX, rh = v.RH;
+    var storm = fhx !== null && fhx >= STORM;
+    var edge = fhx !== null && !storm && fhx >= 125;
+    var heavy = rh !== null && p99.rh && rh >= p99.rh;
+    var vc = $('verdict');
+    if (storm) {
+      vc.className = 'verdict v-storm'; $('vic').textContent = '!';
+      $('vtitle').textContent = (fhx === STORM ? 'Stormgrens gehaald: ' : 'Boven de stormgrens: ') + ms(fhx) + ' m/s gemeten';
+      $('vtext').textContent = 'Op ' + nlDate(ymd) + ' mat KNMI-station ' + s.name + ' een hoogste uurgemiddelde van ' + ms(fhx) + ' m/s (windkracht ' + bft(fhx) + '). Dat is gelijk aan of boven de 14 m/s waarmee veel verzekeraars storm definiëren.';
+    } else if (heavy) {
+      vc.className = 'verdict v-rain'; $('vic').textContent = '☂';
+      $('vtitle').textContent = 'Geen storm, wel een uitzonderlijk natte dag';
+      $('vtext').textContent = 'Het uurgemiddelde bleef onder de stormgrens (' + ms(fhx) + ' m/s), maar met ' + mm(rh) + ' mm regen hoort deze dag bij de ' + (p999.rh && rh >= p999.rh ? '0,1%' : '1%') + ' natste dagen van station ' + s.name + ' (1991–2020). Kijk bij neerslagschade naar de voorwaarden van uw polis.';
+    } else if (edge) {
+      vc.className = 'verdict v-edge'; $('vic').textContent = '≈';
+      $('vtitle').textContent = 'Net onder de stormgrens: ' + ms(fhx) + ' m/s';
+      $('vtext').textContent = 'Station ' + s.name + ' mat een hoogste uurgemiddelde van ' + ms(fhx) + ' m/s (windkracht ' + bft(fhx) + '). Lokaal kan het harder hebben gewaaid: vergelijk met een ander station in de buurt en met de dagen ervoor en erna.';
+    } else {
+      vc.className = 'verdict v-calm'; $('vic').textContent = '✓';
+      $('vtitle').textContent = 'Geen storm gemeten op deze dag';
+      $('vtext').textContent = 'Het hoogste uurgemiddelde bij station ' + s.name + ' was ' + (fhx === null ? 'niet beschikbaar' : ms(fhx) + ' m/s (windkracht ' + bft(fhx) + ')') + ', onder de stormgrens van 14 m/s. Zonder storm of extreme regen beoordelen verzekeraars een daklekkage vaak als slijtage of onderhoud. Bekijk ook de dagen ervoor en erna.';
+    }
+    $('meta').innerHTML = '<span>Locatie: <b>' + esc(loc.name) + '</b></span><span>Station: <b>' + esc(s.name) + '</b> (' + nf0.format(pick.km) + ' km)</span><span>Datum: <b>' + nlDate(ymd) + '</b></span>';
+    $('src-stn').textContent = s.name + ' (' + s.id + ')';
+
+    if (fhx === null) { $('fhx').textContent = '–'; $('fhx-sub').textContent = 'Niet gemeten op dit station'; $('fhx-bar').style.width = '0'; }
+    else {
+      $('fhx').innerHTML = ms(fhx) + '<small>m/s</small>';
+      $('fhx-sub').textContent = 'Windkracht ' + bft(fhx) + ' (' + BFT_NAME[bft(fhx)].toLowerCase() + ') · ' + kmh(fhx) + ' km/u' + (v.FHXH ? ' · ' + slot(ymd, v.FHXH) + ' uur' : '');
+      $('fhx-bar').style.width = Math.min(100, fhx / 300 * 100) + '%';
+    }
+    pill('fhx-pill', fhx === null ? null : storm ? ['r', 'Boven stormgrens'] : edge ? ['o', 'Net onder stormgrens'] : ['g', 'Onder stormgrens']);
+    if (fxx === null) { $('fxx').textContent = '–'; $('fxx-sub').textContent = 'Niet gemeten op dit station'; pill('fxx-pill', null); }
+    else {
+      $('fxx').innerHTML = ms(fxx) + '<small>m/s</small>';
+      $('fxx-sub').textContent = kmh(fxx) + ' km/u' + (v.FXXH ? ' · ' + slot(ymd, v.FXXH) + ' uur' : '') + (v.DDVEC ? ' · wind uit ' + compass(v.DDVEC) : '');
+      pill('fxx-pill', p99.fxx && fxx >= p99.fxx ? ['r', 'Bij de 1% zwaarste dagen'] : ['g', 'Geen uitschieter']);
+    }
+    if (rh === null) { $('rh').textContent = '–'; $('rh-sub').textContent = 'Geen regenmeting op dit station'; pill('rh-pill', null); }
+    else {
+      $('rh').innerHTML = mm(rh) + '<small>mm</small>';
+      $('rh-sub').textContent = v.RHX !== null && v.RHX > 0 ? 'Zwaarste uur: ' + mm(v.RHX) + ' mm' + (v.RHXH ? ' (' + slot(ymd, v.RHXH) + ' uur)' : '') : 'Geen noemenswaardige uursom';
+      pill('rh-pill', p999.rh && rh >= p999.rh ? ['r', 'Bij de 0,1% natste dagen'] : heavy ? ['b', 'Bij de 1% natste dagen'] : rh > 50 ? ['b', 'Natte dag'] : ['g', 'Geen uitschieter']);
+    }
+
+    $('week').innerHTML = week.map(function (w) {
+      var k = key(w.d), x = w.v;
+      if (!x) return '<tr><td>' + nlDate(k) + '</td><td colspan="6" style="text-align:left">geen meting</td></tr>';
+      return '<tr' + (k === ymd ? ' class="sel"' : '') + '><td>' + nlDate(k) + '</td>' +
+        '<td' + (x.FHX >= STORM ? ' class="hot"' : '') + '>' + (x.FHX === null ? '–' : ms(x.FHX) + ' m/s') + '</td>' +
+        '<td>' + (x.FHX === null ? '–' : bft(x.FHX)) + '</td>' +
+        '<td>' + (x.FXX === null ? '–' : ms(x.FXX) + ' m/s') + '</td>' +
+        '<td>' + compass(x.DDVEC) + '</td>' +
+        '<td>' + (x.RH === null ? '–' : mm(x.RH) + ' mm') + '</td>' +
+        '<td>' + (x.RHX === null || x.RHX <= 0 ? '–' : mm(x.RHX) + ' mm') + '</td></tr>';
+    }).join('');
+
+    $('top-title').textContent = 'Zwaarste dagen bij ' + s.name + ' sinds 2000';
+    $('topw').innerHTML = (s.top_wind || []).map(function (t) { return '<li><button type="button" data-d="' + t.d + '">' + nlDate(t.d) + '</button>: ' + ms(t.fhx) + ' m/s' + (t.fxx ? ', stoten ' + ms(t.fxx) : '') + '</li>'; }).join('') || '<li>geen windmetingen</li>';
+    $('topr').innerHTML = (s.top_rain || []).map(function (t) { return '<li><button type="button" data-d="' + t.d + '">' + nlDate(t.d) + '</button>: ' + mm(t.rh) + ' mm</li>'; }).join('') || '<li>geen regenmetingen</li>';
+    $('pdate').textContent = new Date().toLocaleString('nl-NL');
+    $('result').hidden = false;
+    $('result').scrollIntoView({behavior: 'smooth', block: 'start'});
+  }
+  function pill(id, p) { var e = $(id); if (!p) { e.style.display = 'none'; return; } e.style.display = ''; e.className = 'pill ' + p[0]; e.textContent = p[1]; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;'}[c]; }); }
+
+  function start(q, dateStr, stnId) {
+    if (!q || !dateStr) return;
+    status('Locatie zoeken…');
+    geocode(q).then(function (loc) { loc.query = q; return run(loc, dateStr, stnId); })
+      .catch(function (e) { status(e.message === 'notfound' ? 'Deze postcode of plaats is niet gevonden. Probeer bijvoorbeeld "5611 AB" of "Eindhoven".' : 'Er ging iets mis bij het ophalen. Probeer het opnieuw.', true); });
+  }
+
+  var y = new Date(Date.now() - 864e5);
+  $('date').max = iso(y);
+  $('f').addEventListener('submit', function (e) { e.preventDefault(); start($('loc').value, $('date').value); });
+  document.querySelectorAll('.quick button').forEach(function (b) {
+    b.addEventListener('click', function () { $('loc').value = b.dataset.loc; $('date').value = b.dataset.date; start(b.dataset.loc, b.dataset.date); });
+  });
+  $('stn').addEventListener('change', function () { if (STATE.loc) run(STATE.loc, STATE.date, this.value); });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-d]');
+    if (!b || !STATE.loc) return;
+    var d = b.dataset.d, ds = d.slice(0, 4) + '-' + d.slice(4, 6) + '-' + d.slice(6, 8);
+    $('date').value = ds;
+    run(STATE.loc, ds, String(STATE.stn));
+  });
+  $('print').addEventListener('click', function () { window.print(); });
+  $('copy').addEventListener('click', function () {
+    var btn = this;
+    navigator.clipboard.writeText(location.href).then(function () { btn.textContent = 'Gekopieerd'; setTimeout(function () { btn.textContent = 'Link kopiëren'; }, 1800); });
+  });
+  var qs = new URLSearchParams(location.search);
+  if (qs.get('locatie') && qs.get('datum')) {
+    $('loc').value = qs.get('locatie'); $('date').value = qs.get('datum');
+    start(qs.get('locatie'), qs.get('datum'), qs.get('station'));
+  }
+})();
+</script>
+</body>
+</html>
