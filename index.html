@@ -156,7 +156,9 @@ td.hot{color:var(--err);font-weight:800}
 section.info{padding:3rem 0;border-top:1px solid var(--line)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem}
 @media (max-width:860px){.grid2{grid-template-columns:1fr;gap:1rem}}
+.grid2>*{min-width:0}
 .bft{border-collapse:collapse;min-width:0;width:100%;font-size:.86rem}
+.bft th,.bft td{white-space:normal;text-align:left}
 .bft td,.bft th{padding:.45rem .7rem}
 .bft tr.b7 td{background:var(--err-soft);font-weight:800}
 details{border-bottom:1px solid var(--line-2)}
